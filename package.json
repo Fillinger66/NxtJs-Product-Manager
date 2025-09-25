@@ -1,0 +1,26 @@
+{
+  "name": "product-manager",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^2.0.16",
+    "@prisma/client": "^6.16.2",
+    "@types/papaparse": "^5.3.16",
+    "ai": "^5.0.52",
+    "next": "15.5.4",
+    "papaparse": "^5.5.3",
+    "prisma": "^6.16.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.17",
+    "@types/react": "^19",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}

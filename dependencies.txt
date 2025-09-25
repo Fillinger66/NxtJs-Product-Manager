@@ -1,0 +1,16 @@
+npm install prisma @prisma/client
+npm install -D ts-node
+# Deprecated npm install ai openai
+#npm install @ai-sdk/openai
+
+# initializa prisma 
+# npx prisma init
+
+#Create db with prisma 
+#npx prisma db push
+
+# Generate prisma client
+# npx prisma generate
+
+# populate database with the seed script
+#npx prisma db seed
