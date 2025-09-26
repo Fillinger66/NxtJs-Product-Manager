@@ -9,6 +9,11 @@ export async function GET (request : NextRequest, {params} : {params : Promise<{
     const paramsData = await params;
     console.log("Params data:", paramsData);
 
+    let format = request.nextUrl.searchParams.get("format");
+    if(!format) {
+        console.log("Defaulting to text format");
+        format = "text";
+    }
    
     if (!paramsData.id) {
         return NextResponse.json({ message: "Bad request" }, { status: 400 });
@@ -40,7 +45,7 @@ export async function GET (request : NextRequest, {params} : {params : Promise<{
  
         console.log("products:", products);
 
-        const advert = await promptAdvertGeneration(products, "html");
+        const advert = await promptAdvertGeneration(products, format);
 
         return NextResponse.json( { advert }, { status: 200 });
     }

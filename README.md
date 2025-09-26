@@ -184,67 +184,131 @@ npm run dev
 # Server runs on http://localhost:3000
 ```
 
-## 📡 API Documentation
+## 📡 API Routes
 
-### Categories Management
+### Categories
 ```
-GET    /api/categories                    # List all categories
-POST   /api/categories                    # Create new category
-GET    /api/categories/[id]               # Get category by ID
-GET    /api/categories/[id]?includeProducts=true  # Include related products
-PUT    /api/categories/[id]               # Update category
-DELETE /api/categories/[id]               # Delete category
-```
-
-### Brands (Marks) Management
-```
-GET    /api/marks                         # List all brands
-POST   /api/marks                         # Create new brand
-GET    /api/marks/[id]                    # Get brand by ID
-GET    /api/marks/[id]?includeProducts=true        # Include related products
-PUT    /api/marks/[id]                    # Update brand
-DELETE /api/marks/[id]                    # Delete brand
+GET    /api/categories              # List all categories
+POST   /api/categories              # Create new category
+GET    /api/categories/[id]         # Get category by ID
+PUT    /api/categories/[id]         # Update category
+DELETE /api/categories/[id]         # Delete category
 ```
 
-### Products Management
+### Brands (Marks)
 ```
-GET    /api/products                      # List all products with relations
-POST   /api/products                      # Create new product
-GET    /api/products/[id]                 # Get specific product
-PUT    /api/products/[id]                 # Update product
-DELETE /api/products/[id]                 # Delete product
+GET    /api/marks                   # List all brands/marks
+POST   /api/marks                   # Create new brand/mark
+GET    /api/marks/[id]              # Get mark by ID
+PUT    /api/marks/[id]              # Update mark
+DELETE /api/marks/[id]              # Delete mark
+```
+
+### Products
+```
+GET    /api/products                # List all products
+POST   /api/products                # Create new product
+GET    /api/products/[id]           # Get product by ID
+PUT    /api/products/[id]           # Update product
+DELETE /api/products/[id]           # Delete product
 ```
 
 ### AI Advertisement Generation
 ```
-GET    /api/products/advert/[id]          # Generate text advertisement
-GET    /api/products/advert/[id]?format=html      # Generate HTML advertisement
+GET    /api/products/advert/[id]    # Generate AI advertisement for product
 ```
 
 ### CSV Bulk Import
 ```
-POST   /api/upload                        # Upload CSV file for bulk import
+POST   /api/upload                  # Bulk import products from CSV file
 ```
+
+**CSV Format Requirements:**
+```csv
+Product Name,Mark,Category,Price,Stock
+Apple Laptops Product 1,Apple,Laptops,1770.49,39
+Samsung Gaming Accessories,Samsung,Gaming Accessories,1008.49,57
+```
+
+**Import Process:**
+- Automatically creates categories and marks if they don't exist
+- Products are created or updated based on existing name
+- Validates required fields and data types
+- Returns comprehensive error reporting
 
 ## 📝 API Response Formats
 
-### Success Response
+The API uses different response formats depending on the endpoint:
+
+### Standard Entity Responses
+Most endpoints return the entity directly:
 ```json
 {
-  "data": {
-    "id": 1,
-    "name": "Laptops",
-    "products": [...]
-  },
-  "message": "Success"
+  "id": 1,
+  "name": "Laptops",
+  "createdAt": "2025-09-26T10:30:00.000Z",
+  "updatedAt": "2025-09-26T10:30:00.000Z"
 }
 ```
 
-### Error Response
+### Array Responses (GET /api/categories, /api/marks, /api/products)
+```json
+[
+  {
+    "id": 1,
+    "name": "Laptops",
+    "createdAt": "2025-09-26T10:30:00.000Z",
+    "updatedAt": "2025-09-26T10:30:00.000Z"
+  },
+  {
+    "id": 2,
+    "name": "Tablets",
+    "createdAt": "2025-09-26T10:30:00.000Z",
+    "updatedAt": "2025-09-26T10:30:00.000Z"
+  }
+]
+```
+
+### Success Responses with Messages (DELETE operations)
 ```json
 {
-  "errorCode": -1,
+  "message": "Category deleted successfully",
+  "data": {
+    "id": 1,
+    "name": "Laptops"
+  }
+}
+```
+
+### Advertisement Response
+```json
+{
+    "advert": {
+        "success": true,
+        "data": {
+            "text": "advert text"
+        }
+    }
+}
+```
+
+### Error Responses
+```json
+{
   "message": "Resource not found"
+}
+```
+
+### Validation Error Examples
+```json
+{
+  "message": "Bad request. Missing required fields."
+}
+```
+
+```json
+{
+  "message": "Cannot delete category with associated products."
 }
 ```
 
@@ -391,29 +455,125 @@ datasource db {
 ## 🧪 Testing the API
 
 ### Using cURL
+
+**Categories:**
 ```bash
-# Get all products
-curl http://localhost:3000/api/products
+# Get all categories
+curl http://localhost:3000/api/categories
 
 # Create new category
 curl -X POST http://localhost:3000/api/categories \
   -H "Content-Type: application/json" \
-  -d '{"name": "New Category"}'
+  -d '{"name": "Gaming Laptops"}'
 
-# Upload CSV file
+# Get category by ID with products
+curl "http://localhost:3000/api/categories/1?includeProducts=true"
+
+# Update category
+curl -X PUT http://localhost:3000/api/categories/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Updated Category Name"}'
+
+# Delete category
+curl -X DELETE http://localhost:3000/api/categories/1
+```
+
+**Marks (Brands):**
+```bash
+# Get all marks
+curl http://localhost:3000/api/marks
+
+# Create new mark
+curl -X POST http://localhost:3000/api/marks \
+  -H "Content-Type: application/json" \
+  -d '{"name": "ASUS"}'
+
+# Get mark with products
+curl "http://localhost:3000/api/marks/1?includeProducts=true"
+```
+
+**Products:**
+```bash
+# Get all products
+curl http://localhost:3000/api/products
+
+# Create new product
+curl -X POST http://localhost:3000/api/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Gaming Laptop Pro",
+    "description": "High-performance gaming laptop",
+    "price": 1299.99,
+    "stock": 15,
+    "categoryId": 1,
+    "markId": 1
+  }'
+
+# Get product with relations
+curl "http://localhost:3000/api/products/1?includeMark=true&includeCategory=true"
+
+# Update product
+curl -X PUT http://localhost:3000/api/products/1 \
+  -H "Content-Type: application/json" \
+  -d '{"price": 1199.99, "stock": 20}'
+```
+
+**AI Advertisement:**
+```bash
+# Generate HTML advertisement
+curl "http://localhost:3000/api/products/advert/1?format=html"
+
+# Generate text advertisement  
+curl "http://localhost:3000/api/products/advert/1?format=text"
+```
+
+**CSV Upload:**
+```bash
+# Upload CSV file (replace with actual file path)
 curl -X POST http://localhost:3000/api/upload \
-  -F "csv=@tech_products_v3.csv"
-
-# Generate advertisement
-curl http://localhost:3000/api/products/advert/1?format=html
+  -F "csv=@./tech_products_v3.csv"
 ```
 
 ### Using Postman
-1. Import the API endpoints
-2. Set base URL to `http://localhost:3000`
-3. Test CRUD operations
-4. Upload CSV files
-5. Generate AI advertisements
+
+**Ready-to-Use Postman Files:**
+
+The project includes pre-configured Postman files in the `postman/` directory:
+
+- **Collection**: `postman/ProductManager.postman_collection.json`
+- **Environment**: `postman/product-manager.postman_environment.json`
+
+**Quick Setup:**
+1. **Import Collection**: In Postman, import `ProductManager.postman_collection.json`
+2. **Import Environment**: Import `product-manager.postman_environment.json`
+3. **Update Environment Variables**: 
+   - Set `baseURL` to your server URL (default: `http://localhost:3000`)
+   - Update `port` if using a different port (default: `3000`)
+4. **Select Environment**: Choose "product-manager" environment in Postman
+
+**Environment Variables to Configure:**
+```json
+{
+  "baseURL": "http://localhost:3000",  // Change if using different host/port
+  "port": "3000"                       // Update if server runs on different port
+}
+```
+
+**Included Requests:**
+- ✅ **Categories**: Full CRUD operations with query parameters
+- ✅ **Marks (Brands)**: Complete API coverage
+- ✅ **Products**: All endpoints with relation includes
+- ✅ **AI Advertisement**: Text and HTML format examples
+- ✅ **CSV Upload**: File upload with sample data
+
+**Testing Workflow:**
+1. Start with creating categories and marks
+2. Create products using valid categoryId and markId
+3. Test product retrieval with relations
+4. Generate advertisements for created products
+5. Test bulk import with sample CSV
+
+**Note**: If deploying to a different environment (staging, production), simply update the `baseURL` in the environment variables to match your deployment URL.
 
 ## 🤝 Contributing
 

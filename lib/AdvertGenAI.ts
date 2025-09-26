@@ -3,7 +3,7 @@ import { generateText } from 'ai';
 
 
 
-export async function promptAdvertGeneration(prodcutData: any, responseType: "text" | "html" = "text") {
+export async function promptAdvertGeneration(prodcutData: any, responseType: string) {
   let prompt = `
     You are a world-class advertising copywriter specializing in direct-response marketing. Your task is to generate a highly persuasive and professional advertisement copy based on the provided product data and marketing context.
 
@@ -38,7 +38,8 @@ export async function promptAdvertGeneration(prodcutData: any, responseType: "te
     - Do not include any introductory text, preambles, or explanations (e.g., "Here is your ad...").
     - Output only the final, formatted advertisement text.
     - **DO NOT** use Markdown, bullet points, numbered lists, or any special characters (including '\n', '\r', '\t', or '-' for lists) that would normally create line breaks or formatting. The text must flow continuously.
-  `
+    ${responseType === "html" ? "format the advertisement using HTML tags (e.g., <h1> for headlines, <p> for paragraphs, <ul> and <li> for lists, and <strong> for emphasis). Don't add <body>, <html>, or <head> tags." : ""}
+    `
 
     const geminiModel = google('gemini-2.5-flash')
 

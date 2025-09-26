@@ -1,0 +1,21 @@
+[
+  { "name": "Hewlett-Packard" },
+  { "name": "Lenovo" },
+  { "name": "Asus" },
+  { "name": "Sony" },
+  { "name": "Microsoft" },
+  { "name": "Google" },
+  { "name": "Apple" },
+  { "name": "Samsung" },
+  { "name": "Dell" },
+  { "name": "Acer" },
+  { "name": "Canon" },
+  { "name": "Nikon" },
+  { "name": "Logitech" },
+  { "name": "Bose" },
+  { "name": "JBL" },
+  { "name": "Razer" },
+  { "name": "Alienware" },
+  { "name": "Fitbit" },
+  { "name": "Garmin" }
+]
