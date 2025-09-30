@@ -1,27 +1,33 @@
 import { NextRequest,NextResponse } from "next/server";
 import { PrismaClient} from "@prisma/client";
+import { CategoryManager } from "@/lib/db/DbManager";
+import { AlreadyExistError } from "@/lib/types/ErrorType";
+import { ApiResponseBuilder } from "@/lib/types/ApiResponseType";
 
-
+/**
+ * Gets all categories.
+ * @param request - The incoming request object.
+ * @returns A JSON response containing the list of categories.
+ */
 export async function GET(request : NextRequest) {
     try {
-        const prisma = new PrismaClient();
-
-
-        const categories = await prisma.category.findMany({
-            include: {
-                products: false
-            }
-        });
+        const categories = await CategoryManager.getAllCategories();
         console.log("categories:", categories);
-        return NextResponse.json(categories, { status: 200 });
+        return NextResponse.json(ApiResponseBuilder.success(categories), { status: 200 } );
     }
     catch(error) {
+
         console.error("Error fetching categories:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json(ApiResponseBuilder.error("Internal Server Error"), {status:500});
     }
 
 }
-
+/**
+ * Creates a new category.
+ * @param request - The incoming request object.
+ * @param params - The route parameters containing the category ID.
+ * @returns A JSON response containing the created category data.
+ */
 export async function POST(request : NextRequest) {
 
     try {
@@ -32,27 +38,19 @@ export async function POST(request : NextRequest) {
             return NextResponse.json({ message: "Bad request. Missing required fields." }, { status: 400 });
         }
 
-        const existingCategory = await prisma.category.findUnique({
-            where: { name: body.name }
-        });
-
-        if (existingCategory) {
-            return NextResponse.json({ message: "Category already exists." }, { status: 400 });
-        }
-
-        const newCategory = await prisma.category.create({
-            data: {
-                name: body.name
-            }
-        });
+        const newCategory = await CategoryManager.createCategory(body.name);
 
         console.log("Created new category:", newCategory);
         await prisma.$disconnect();
-        return NextResponse.json(newCategory, { status: 201 });
+        return NextResponse.json(ApiResponseBuilder.success(newCategory), { status: 201 });
 
     }catch(error){
         console.error("Error creating category:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        if (error instanceof AlreadyExistError) {
+            return NextResponse.json(ApiResponseBuilder.error(error.message), { status: 409 });
+        }
+
+        return NextResponse.json(ApiResponseBuilder.error("Internal Server Error"), { status: 500 });
     }
 
 }

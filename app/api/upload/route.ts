@@ -5,7 +5,9 @@ import { Decimal } from "@prisma/client/runtime/library";
 import { PrismaClient } from "@prisma/client";
 
 
-
+/**
+ * Data structure representing the expected CSV data format
+ */
 type csv_data = {
     Product: string,
     Mark: string,
@@ -14,7 +16,12 @@ type csv_data = {
     Price: Decimal,
     Stock: number
 }
-
+/**
+ * Handles the POST request for uploading a CSV file.
+ * @param request - The incoming request object.
+ * @param response - The response object to send back.
+ * @returns A JSON response indicating the result of the upload.
+ */
 export async function POST(request : NextRequest,response : NextResponse) {
 
     const formData = await request.formData();

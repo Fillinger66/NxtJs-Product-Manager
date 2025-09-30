@@ -29,16 +29,16 @@ A comprehensive REST API built with Next.js 14+ that demonstrates modern full-st
 product-manager/
 ├── app/
 │   └── api/                     # API Routes (App Router)
-│       ├── categories/          # Category management
-│       │   ├── route.ts         # GET all, POST new
+│       ├── categories/          # Category management endpoints
+│       │   ├── route.ts         # GET all, POST new category
 │       │   └── [id]/
 │       │       └── route.ts     # GET, PUT, DELETE by ID
-│       ├── marks/               # Brand/Mark management  
-│       │   ├── route.ts         # GET all, POST new
+│       ├── marks/               # Brand/Mark management endpoints
+│       │   ├── route.ts         # GET all, POST new mark
 │       │   └── [id]/
 │       │       └── route.ts     # GET, PUT, DELETE by ID
-│       ├── products/            # Product management
-│       │   ├── route.ts         # GET all, POST new
+│       ├── products/            # Product management endpoints
+│       │   ├── route.ts         # GET all, POST new product
 │       │   ├── [id]/
 │       │   │   └── route.ts     # GET, PUT, DELETE by ID
 │       │   └── advert/
@@ -46,14 +46,35 @@ product-manager/
 │       │           └── route.ts # AI advertisement generation
 │       └── upload/
 │           └── route.ts         # CSV bulk import endpoint
-├── lib/
-│   ├── types.ts                 # Shared TypeScript definitions
-│   └── AdvertGenAI.ts          # AI advertisement logic
-├── prisma/
-│   └── schema.prisma           # Database schema definition
-├── docker/
-│   └── docker-compose.yaml    # Local development setup
-└── tech_products_v3.csv       # Sample data 
+├── lib/                         # Business Logic & Utilities Layer
+│   ├── ai/                      # AI Integration Layer
+│   │   ├── AdvertGenAI.ts       # Main AI service entry point
+│   │   └── AdvertGenerator.ts   # Core AI engine with prompt engineering
+│   ├── db/                      # Database Management Layer
+│   │   └── DbManager.ts         # Unified data access (ProductManager, CategoryManager, MarkManager)
+│   ├── dto/                     # Data Transfer Objects
+│   │   └── ProductDto.ts        # Standardized product data structure
+│   └── types/                   # Type Definitions & Utilities
+│       ├── ApiResponseType.ts   # Consistent response format builders
+│       ├── ErrorType.ts         # Custom exception classes
+│       └── types.ts             # Core interfaces and shared types
+├── prisma/                      # Database Configuration
+│   └── schema.prisma            # Database schema definition
+├── docker/                      # Development Environment
+│   └── docker-compose.yaml      # PostgreSQL local setup
+├── postman/                     # API Testing Resources
+│   ├── ProductManager.postman_collection.json    # Complete API collection
+│   └── product-manager.postman_environment.json  # Environment variables
+├── datas/                       # Sample Data & Test Files
+│   ├── tech_products_v3.csv     # 383 sample tech products
+│   └── sample_requests.json     # API testing examples
+├── dependencies.txt             # Project dependencies documentation
+├── package.json                 # Node.js dependencies and scripts
+├── next.config.js               # Next.js configuration
+├── tsconfig.json                # TypeScript configuration
+├── .env.example                 # Environment variables template
+├── .gitignore                   # Git ignore rules
+└── README.md                    # Project documentation
 ```
 
 ## 🗄️ Database Schema
@@ -98,6 +119,225 @@ model Product {
 - Decimal type for precise price handling
 - Cascading relationships for data integrity
 - Timestamps for audit trails
+
+## 📚 Library Architecture (`/lib` folder)
+
+The `lib` folder contains the core business logic, utilities, and type definitions that power the application. It's organized into specialized layers for maintainability and separation of concerns:
+
+### 🤖 AI Integration Layer (`/lib/ai/`)
+
+**Purpose**: Handles all AI-powered advertisement generation using Google's Gemini model.
+
+#### `AdvertGenAI.ts` - Main AI Service
+- **Primary Function**: Entry point for advertisement generation
+- **Key Features**:
+  - Configures Gemini 2.5 Flash model via Vercel AI SDK
+  - Orchestrates the advertisement generation process
+  - Handles model initialization and error management
+- **Usage**: Called by API routes to generate product advertisements
+- **Integration**: Works with ProductDto for structured data input
+
+```typescript
+export async function generateAdvert(productDto: ProductDto, responseType: string): Promise<string>
+```
+
+#### `AdvertGenerator.ts` - Core AI Engine
+- **Primary Function**: Encapsulates the AI generation logic and prompt engineering
+- **Key Features**:
+  - Dynamic prompt generation based on product data
+  - Configurable AI models (default: Gemini Pro)
+  - Response sanitization and formatting
+  - Comprehensive error handling for AI API calls
+- **Architecture**: Class-based design for stateful prompt management
+
+```typescript
+class AdvertGenerator {
+  constructor(productData: ProductDto, responseType: string, model?: LanguageModel)
+  async getGeneratedAdvert(): Promise<string>
+}
+```
+
+### 🗄️ Database Management Layer (`/lib/db/`)
+
+#### `DbManager.ts` - Unified Data Access Layer
+- **Purpose**: Centralized database operations for all entities
+- **Architecture**: Static manager classes for each entity type
+- **Key Features**:
+  - Type-safe Prisma operations with proper connection management
+  - Consistent error handling with custom exceptions
+  - Optimized queries with relationship loading options
+  - Transaction management and proper disconnection
+
+**Manager Classes:**
+
+**ProductManager:**
+```typescript
+// Core product operations
+static async getProductById(id: number, fullProduct: boolean): Promise<Product | FullProduct | null>
+static async getAllProducts(): Promise<Product[]>
+static async createProduct(productData: ProductData): Promise<Product>
+static async updateProduct(id: number, productData: ProductData): Promise<Product>
+static async deleteProduct(id: number): Promise<Product>
+static async getProductByName(name: string): Promise<Product | null>
+```
+
+**CategoryManager:**
+```typescript
+// Category operations with optional product inclusion
+static async getCategoryById(id: number, includeProducts: boolean): Promise<Category | null>
+static async getAllCategories(): Promise<Category[]>
+static async getAllCategoriesWithProducts(): Promise<Category[]>
+static async createCategory(name: string): Promise<Category>
+static async updateCategory(id: number, name: string): Promise<Category>
+static async deleteCategory(id: number): Promise<Category>
+```
+
+**MarkManager:**
+```typescript
+// Brand/Mark operations
+static async getMarkById(id: number, includeProducts: boolean): Promise<Mark | null>
+static async getAllMarks(): Promise<Mark[]>
+static async createMark(name: string): Promise<Mark>
+static async updateMark(id: number, name: string): Promise<Mark>
+static async deleteMark(id: number): Promise<Mark>
+static async getMarkByName(name: string): Promise<Mark | null>
+```
+
+### 📄 Data Transfer Objects (`/lib/dto/`)
+
+#### `ProductDto.ts` - Product Data Transfer Object
+- **Purpose**: Standardized data structure for product information across layers
+- **Key Features**:
+  - Clean separation between database models and API responses
+  - Handles Prisma Decimal conversion to JavaScript numbers
+  - Includes related entity data (mark, category) in a flat structure
+  - Optimized for AI prompt generation and API consumption
+- **Usage**: Transforms Prisma models into consumable format for AI and frontend
+
+```typescript
+class ProductDto {
+  title: string;          // Product name
+  description: string;    // Product description
+  price: number;          // Converted from Prisma Decimal
+  stock: number;          // Available quantity
+  mark: { name: string }; // Brand information
+  category: { name: string }; // Category information
+  
+  constructor(product: Product, mark?: Mark, category?: Category)
+}
+```
+
+**Benefits:**
+- Eliminates Prisma-specific types from API responses
+- Provides consistent data structure across all consumers
+- Handles complex type conversions (Decimal → number)
+- Reduces over-fetching by including only necessary fields
+
+### 🔧 Type Definitions & Utilities (`/lib/types/`)
+
+#### `ApiResponseType.ts` - Standardized Response Builder
+- **Purpose**: Ensures consistent API response format across all endpoints
+- **Key Features**:
+  - Type-safe response construction with TypeScript generics
+  - Union types for success/error responses
+  - Builder pattern for easy response creation
+  - Eliminates response format inconsistencies
+
+```typescript
+// Utility builder methods
+export class ApiResponseBuilder {
+  static success<T>(data: T): SuccessResponse<T>
+  static error(message: string): FailedResponse
+}
+
+// Type definitions
+export type ApiResponse<T> = SuccessResponse<T> | FailedResponse
+
+interface SuccessResponse<T> {
+  success: true;
+  data: T;
+  error?: undefined;
+}
+
+interface FailedResponse {
+  success: false;
+  data?: undefined;
+  error: string;
+}
+```
+
+#### `ErrorType.ts` - Custom Exception Classes
+- **Purpose**: Domain-specific error handling with proper HTTP status mapping
+- **Custom Exceptions**:
+  - `NotFoundError` → 404 HTTP status (Resource not found)
+  - `AlreadyExistError` → 409 Conflict status (Duplicate resources)
+  - `ConflictError` → 409 Conflict status (Business rule violations)
+  - `BadRequestError` → 400 Bad Request status (Invalid input)
+
+```typescript
+// Usage example in database managers
+if (!existingProduct) {
+  throw new NotFoundError("Product not found");
+}
+
+if (existingCategory) {
+  throw new AlreadyExistError("Category already exists");
+}
+```
+
+#### `types.ts` - Core Interface Definitions
+- **Purpose**: Shared type definitions used across the application
+- **Key Interfaces**:
+
+```typescript
+interface ProductData {
+  name: string;
+  description: string;
+  price: number;
+  markId: number;
+  categoryId: number;
+  stock: number;
+}
+
+interface FullProduct extends Product {
+  category?: Category | null;
+  mark?: Mark | null;
+}
+
+type SuccessResponse<T> = {
+  data: T;
+  message: null;
+}
+
+type ErrorResponse = {
+  data: null;
+  message: string;
+}
+```
+
+### 🔄 Integration Flow
+
+The lib folder components work together in a layered architecture:
+
+1. **API Route** receives request → validates input parameters
+2. **DbManager** classes handle database operations → return Prisma models with proper error handling
+3. **ProductDto** transforms data → standardizes format for consumption (Decimal→number, flattens relations)
+4. **AdvertGenerator** (if needed) → generates AI content using structured DTO data
+5. **ApiResponseBuilder** → formats final response with consistent structure
+6. **Custom Errors** → caught by route error middleware and mapped to appropriate HTTP status codes
+
+### 🏗️ Architecture Benefits
+
+This layered architecture provides:
+
+- **Separation of Concerns**: Each layer has a single, well-defined responsibility
+- **Type Safety**: Full TypeScript coverage with Prisma-generated types
+- **Reusability**: Shared utilities prevent code duplication across routes
+- **Maintainability**: Clear boundaries make the codebase easy to modify and extend
+- **Testability**: Isolated layers enable comprehensive unit testing
+- **Consistency**: Standardized patterns across all API endpoints
+- **Error Handling**: Centralized error management with proper HTTP status mapping
+- **Performance**: Optimized database queries with relationship loading control
 
 ## 🚀 Quick Start
 
@@ -609,6 +849,6 @@ This project is created for educational and demonstration purposes. Feel free to
 
 ---
 
-**Built with ❤️ using Next.js, Prisma, and Google Gemini**
+**Built using Next.js, Prisma, and Google Gemini**
 
 *This project showcases modern full-stack development practices and serves as a comprehensive example of building production-ready APIs with Next.js.*

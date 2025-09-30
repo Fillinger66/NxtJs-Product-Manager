@@ -1,23 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-
-import { PrismaClient } from "@prisma/client";
-import { Decimal } from "@prisma/client/runtime/binary";
-
+import { ApiResponseBuilder } from "@/lib/types/ApiResponseType";
+import { ProductManager } from "@/lib/db/DbManager";
+import { ProductData } from "@/lib/types/types";
+import { AlreadyExistError, NotFoundError } from "@/lib/types/ErrorType";
+/**
+ * Gets a product by ID, with an option to include related mark and category information.
+ * @param request - The incoming request object.
+ * @param params - The route parameters containing the product ID.
+ * @returns A JSON response containing the product data.
+ */
 export async function GET (request : NextRequest, {params} : {params : Promise<{id : string}>}){
 
     const paramsData = await params;
     console.log("Params data:", paramsData);
 
-    let includeMark = request.nextUrl.searchParams.get("includeMark");
-    if(!includeMark) {
-        console.log("Not including marks");
-        includeMark = "false";
+    let fullProduct = request.nextUrl.searchParams.get("fullProduct");
+    if(!fullProduct) {
+        console.log("Not including mark and category");
+        fullProduct = "false";
     }
-    let includeCategory = request.nextUrl.searchParams.get("includeCategory");
-    if(!includeCategory) {
-        console.log("Not including categories");
-        includeCategory = "false";
-    }
+   
 
     if (!paramsData.id) {
         return NextResponse.json({ message: "Bad request" }, { status: 400 });
@@ -25,39 +27,26 @@ export async function GET (request : NextRequest, {params} : {params : Promise<{
 
     try {
 
-        const prisma = new PrismaClient();
-        const products = await prisma.product.findUnique(
-            {
-                where : {id : Number(paramsData.id)}
-            }
-        );
-        if(products === null) {
-            return NextResponse.json({"message": "resource not found"}, {status: 404} );
-        }
+        const product = await ProductManager.getProductById(Number(paramsData.id), fullProduct === "true" ? true : false);
 
-        if (includeMark === "true") {
-            const mark = await prisma.mark.findUnique({
-                where: { id: products.markId }
-            });
-            (products as any).mark = mark;
-        }
+        console.log("Product:", product);
 
-        if (includeCategory === "true") {
-            const categories = await prisma.category.findUnique({
-                where: { id:  products.categoryId  }
-            });
-            (products as any).categories = categories;
-        }
-
-        console.log("products:", products);
-        return NextResponse.json( products, { status: 200 });
+        return NextResponse.json( ApiResponseBuilder.success(product), { status: 200 });
     }
     catch(error) {
+        if (error instanceof NotFoundError) {
+            return NextResponse.json(ApiResponseBuilder.error(error.message), { status: 404 });
+        }
         console.error("Error fetching products:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json(ApiResponseBuilder.error("Internal Server Error"), { status: 500 });
     }
 }
-
+/**
+ * Deletes a product by ID.
+ * @param request - The incoming request object.
+ * @param params - The route parameters containing the product ID.
+ * @returns A JSON response indicating the result of the deletion.
+ */
 export async function DELETE(request : NextRequest, {params} : {params: Promise<{id: string}>}) {
     const paramsData = await params;
 
@@ -65,28 +54,27 @@ export async function DELETE(request : NextRequest, {params} : {params: Promise<
         return NextResponse.json({ message: "Product ID is required" }, { status: 400 });
     }
     try {
-        const prisma = new PrismaClient();
-        const existingProduct = await prisma.product.findUnique({
-            where : {id : Number(paramsData.id)}
-        });
-
-        if (existingProduct === null){
-            return NextResponse.json({"message": "resource not found"}, {status: 404} );
-        }
-        const deletedProduct = await prisma.product.delete({
-            where : {id: Number(paramsData.id)}
-        }); 
+     
+        const deletedProduct = await ProductManager.deleteProduct(Number(paramsData.id));
 
         console.log("Deleted product:", deletedProduct);
-        await prisma.$disconnect();
-        return NextResponse.json({ message: "Product deleted successfully", data : deletedProduct }, { status: 200 });
+
+        return NextResponse.json(ApiResponseBuilder.success(deletedProduct), { status: 200 });
 
     }catch(error) {
+        if (error instanceof NotFoundError) {
+            return NextResponse.json(ApiResponseBuilder.error(error.message ), { status: 404 });
+        }
         console.error("Error deleting product:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json(ApiResponseBuilder.error("Internal Server Error"), { status: 500 });
     }
 }
-
+/**
+ * Updates a product by ID.
+ * @param request - The incoming request object.
+ * @param params - The route parameters containing the product ID.
+ * @returns A JSON response containing the updated product data.
+ */
 export async function PUT(request : NextRequest, {params} : {params: Promise<{id: string}>}) {
     const paramsData = await params;
 
@@ -95,43 +83,34 @@ export async function PUT(request : NextRequest, {params} : {params: Promise<{id
     }
 
     try {
-        const prisma = new PrismaClient();
-        const existingProduct = await prisma.product.findUnique({
-            where : {id : Number(paramsData.id)}
-        });
-        if (existingProduct === null){
-            return NextResponse.json({"message": "resource not found"}, {status: 404} );
-        }
-
         const body = await request.json();
-        console.log("Request body:", body);
-
-        const mark = body.markId ? await prisma.mark.findUnique({ where: { id: body.markId } }) : null;
-        const category = body.categoryId ? await prisma.category.findUnique({ where: { id: body.categoryId } }) : null;
-
-        if(mark === null || category === null) {
-            return NextResponse.json({ message: "Invalid markId or categoryId." }, { status: 400 });
+        console.log("Request body:", body)
+        if(!body.name || !body.categoryId || !body.markId) {
+            return NextResponse.json(ApiResponseBuilder.error("Bad request. Missing required fields."), { status: 400 });
         }
 
-        const updatedProduct = await prisma.product.update({
-            where : { id : Number(paramsData.id)},
-            data: {
-                name: body.name != existingProduct.name ? body.name : existingProduct.name,
-                description: body.description != existingProduct.description ? body.description : existingProduct.description,
-                price: body.price != null ?  (body.price!= existingProduct.price ? new Decimal(body.price.toString()) : existingProduct.price) : existingProduct.price,
-                stock: body.stock != null ? (body.stock != existingProduct.stock ? Number(body.stock) : existingProduct.stock) : existingProduct.stock,
-                categoryId: category.id != existingProduct.categoryId ? Number(category.id) : existingProduct.categoryId,
-                markId: mark.id != existingProduct.markId ? Number(mark.id) : existingProduct.markId
-            }
-        });
+        const productData : ProductData = {
+            name: body.name,
+            description: body.description? body.description : null,
+            price: body.price? body.price : null,
+            stock: body.stock? body.stock : null,
+            categoryId: body.categoryId,
+            markId: body.markId
+        };
+        const updatedProduct = await ProductManager.updateProduct(Number(paramsData.id), productData);
 
         console.log("Updated product:", updatedProduct);
-        await prisma.$disconnect();
-        return NextResponse.json(updatedProduct, { status: 200 });
+        return NextResponse.json(ApiResponseBuilder.success(updatedProduct), { status: 200 });
 
 
     }catch(error) {
+        if (error instanceof NotFoundError) {
+            return NextResponse.json(ApiResponseBuilder.error(error.message), { status: 404 });
+        }
+        else if (error instanceof AlreadyExistError) {
+            return NextResponse.json(ApiResponseBuilder.error(error.message), { status: 409 });
+        }
         console.error("Error fetching products:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json(ApiResponseBuilder.error("Internal Server Error"), { status: 500 });
     }
 }

@@ -1,20 +1,21 @@
 import { NextRequest,NextResponse } from "next/server";
-import { PrismaClient} from "@prisma/client";
-import { ErrorResponse, SuccessResponse } from "@/lib/types";
-
+import { ApiResponseBuilder } from "@/lib/types/ApiResponseType";
+import { CategoryManager } from "@/lib/db/DbManager";
+import { AlreadyExistError, ConflictError, NotFoundError } from "@/lib/types/ErrorType";
+/**
+ * Gets a category by ID.
+ * @param request - The incoming request object.
+ * @param params - The route parameters containing the category ID.
+ * @returns A JSON response containing the category data.
+ */
 export async function GET(request : NextRequest, {params} : {params: Promise<{id: string}>}) {
 
     const paramsData = await params;
     console.log("Params data:", paramsData);
 
-    let ApiResponse: SuccessResponse<any> | ErrorResponse;
-
     if (!paramsData.id) {
-        ApiResponse = {
-            errorCode: -1,
-            message: "Bad request"
-        };
-        return NextResponse.json(ApiResponse, { status: 400 });
+       
+        return NextResponse.json(ApiResponseBuilder.error("Missing request parameters"), { status: 400 });
     }
 
     let includeProducts = request.nextUrl.searchParams.get("includeProducts");
@@ -24,113 +25,86 @@ export async function GET(request : NextRequest, {params} : {params: Promise<{id
     }
 
     try {
-        const prisma = new PrismaClient();
 
-        const categories = await prisma.category.findUnique({
-            where : {id : Number(paramsData.id)},
-            include: {
-                products: includeProducts === "true" ? true : false
-            }
-        });
-
+        const categories  = await CategoryManager.getCategoryById(Number(paramsData.id), includeProducts === "true" ? true : false);
         if(categories === null) {
-             ApiResponse = {
-                errorCode: -3,
-                message: "Internal Server Error"
-            };
-            return NextResponse.json({"message": "resource not found"}, {status: 404} );
+            return NextResponse.json(ApiResponseBuilder.error("Resource not found"), {status: 404} );
         }
 
         console.log("categories:", categories);
-        await prisma.$disconnect();
 
-        return NextResponse.json(categories, { status: 200 });
+        return NextResponse.json(ApiResponseBuilder.success(categories), { status: 200 });
     }
     catch(error) {
         console.error("Error fetching categories:", error);
-        ApiResponse = {
-            errorCode: -2,
-            message: "Internal Server Error"
-        };
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+
+        return NextResponse.json(ApiResponseBuilder.error("Internal Server Error"), { status: 500 });
     }
 }
-
+/**
+ * Updates a category by ID.
+ * @param request - The incoming request object.
+ * @param params - The route parameters containing the category ID.
+ * @returns A JSON response containing the updated category data.
+ */
 export async function PUT(request : NextResponse, {params} : {params: Promise<{id: string}>}) {
 
     const paramsData = await params;
     console.log("Params data:", paramsData);
+    const body = await request.json();
+    console.log("Request body:", body)
 
-    if (!paramsData.id) {
-        return NextResponse.json({ message: "Bad request" }, { status: 400 });
+    if (!paramsData.id || !body.name) {
+        return NextResponse.json(ApiResponseBuilder.error("Bad request"), { status: 400 });
     }
 
     try {
-        const prisma = new PrismaClient();
-        const existingCategory = await prisma.category.findUnique({
-            where : {id : Number(paramsData.id)}
-        });
-        if (existingCategory === null){
-            return NextResponse.json({"message": "resource not found"}, {status: 404} );
-        }
-        const body = await request.json();
-        console.log("Request body:", body);
 
-        const updatedCategory = await prisma.category.update({
-            where : { id : Number(paramsData.id)},
-            data: {
-                name: body.name,
-            }
-        });
-
+        const updatedCategory = await CategoryManager.updateCategory(Number(paramsData.id), body.name);
         console.log("Updated category:", updatedCategory);
-        await prisma.$disconnect();
+        return NextResponse.json(ApiResponseBuilder.success(updatedCategory), { status: 200 });
 
-        return NextResponse.json(updatedCategory, { status: 200 });
     }catch(error) {
+        if (error instanceof NotFoundError) {
+            return NextResponse.json(ApiResponseBuilder.error(error.message), { status: 404 });
+        }
+        else if (error instanceof AlreadyExistError) {
+            return NextResponse.json(ApiResponseBuilder.error(error.message), { status: 409 });
+        }
         console.error("Error fetching categories:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json(ApiResponseBuilder.error("Internal Server Error"), { status: 500 });
     }
 
 }
-
+/**
+ * Delete a category by ID.
+ * @param request - The incoming request object.
+ * @param params - The route parameters containing the category ID.
+ * @returns A JSON response indicating the result of the deletion.
+ */
 export async function DELETE(request : NextResponse, {params} : {params: Promise<{id: string}>}) {
 
     const paramsData = await params;
     console.log("Params data:", paramsData);
 
     if (!paramsData.id) {
-        return NextResponse.json({ message: "Bad request" }, { status: 400 });
+        return NextResponse.json(ApiResponseBuilder.error("Missing request parameters"), { status: 400 });
     }
 
     try {
 
-        const prisma = new PrismaClient();
-
-        const existingCategory = await prisma.category.findUnique({
-            where : {id : Number(paramsData.id)},
-            include : { products : true }
-        });
-
-        if (existingCategory === null){
-            return NextResponse.json({"message": "resource not found"}, {status: 404} );
-        }
-        else if (existingCategory.products && existingCategory.products.length > 0) {
-            return NextResponse.json({ message: "Cannot delete category with associated products." }, { status: 400 });
-        }
-        
-        const deletedCategory = await prisma.category.delete({
-            where: { id: Number(paramsData.id) }
-        });
-
+        const deletedCategory = await CategoryManager.deleteCategory(Number(paramsData.id));
         console.log("Deleted category:", deletedCategory);
-        await prisma.$disconnect();
-
-        return NextResponse.json({ message: "Category deleted successfully", "data": deletedCategory }, { status: 200 });
-
+        return NextResponse.json(ApiResponseBuilder.success(deletedCategory), { status: 200 });
+   
     } catch(error) {
+        if (error instanceof NotFoundError) {
+            return NextResponse.json(ApiResponseBuilder.error(error.message), { status: 404 });
+        }
+        else if (error instanceof ConflictError) {
+            return NextResponse.json(ApiResponseBuilder.error(error.message), { status: 409 });
+        }
         console.error("Error deleting category:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json(ApiResponseBuilder.error("Internal Server Error"), { status: 500 });
     }
-
 }

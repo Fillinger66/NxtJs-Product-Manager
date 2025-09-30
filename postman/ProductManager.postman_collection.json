@@ -34,14 +34,15 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/categories",
+							"raw": "{{baseUrl}}:{{port}}/api/categories/14",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"port": "{{port}}",
 							"path": [
 								"api",
-								"categories"
+								"categories",
+								"14"
 							]
 						}
 					},
@@ -54,7 +55,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\":\"Laptop/portable computer\"\r\n}",
+							"raw": "{\r\n    \"name\":\"Others\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -62,7 +63,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/categories/1",
+							"raw": "{{baseUrl}}:{{port}}/api/categories/14",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -70,7 +71,7 @@
 							"path": [
 								"api",
 								"categories",
-								"1"
+								"14"
 							]
 						}
 					},
@@ -82,14 +83,21 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/marks",
+							"raw": "{{baseUrl}}:{{port}}/api/categories/1?includeProducts=true",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"port": "{{port}}",
 							"path": [
 								"api",
-								"marks"
+								"categories",
+								"1"
+							],
+							"query": [
+								{
+									"key": "includeProducts",
+									"value": "true"
+								}
 							]
 						}
 					},
@@ -102,7 +110,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\":\"Laptop/portable computer\"\r\n}"
+							"raw": "{ \"name\": \"Accessories\" }"
 						},
 						"url": {
 							"raw": "{{baseUrl}}:{{port}}/api/categories",
@@ -123,12 +131,8 @@
 					"request": {
 						"method": "DELETE",
 						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"name\":\"Laptop/portable computer\"\r\n}"
-						},
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/categories/1",
+							"raw": "{{baseUrl}}:{{port}}/api/categories/14",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -136,7 +140,7 @@
 							"path": [
 								"api",
 								"categories",
-								"1"
+								"14"
 							]
 						}
 					},
@@ -187,14 +191,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/marks",
+							"raw": "{{baseUrl}}:{{port}}/api/products",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"port": "{{port}}",
 							"path": [
 								"api",
-								"marks"
+								"products"
 							]
 						}
 					},
@@ -207,7 +211,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"Apple Laptops Product 100\",\r\n    \"description\": \"This compact and lightweight gadget is perfect for on-the-go productivity.\",\r\n    \"price\": \"1060.79\",\r\n    \"stock\": 45,\r\n    \"createdAt\": \"2025-09-24T19:49:18.479Z\",\r\n    \"categoryId\": 1,\r\n    \"markId\": 1\r\n}\r\n\r\n",
+							"raw": "{\r\n    \"name\": \"Apple Laptops Product 1000\",\r\n    \"description\": \"This compact and lightweight gadget is perfect for on-the-go productivity.\",\r\n    \"price\": 1060.79,\r\n    \"createdAt\": \"2025-09-24T19:49:18.479Z\",\r\n    \"categoryId\": 1,\r\n    \"markId\": 1\r\n}\r\n\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -234,7 +238,7 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/products/262",
+							"raw": "{{baseUrl}}:{{port}}/api/products/265",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -242,7 +246,7 @@
 							"path": [
 								"api",
 								"products",
-								"262"
+								"265"
 							]
 						}
 					},
@@ -255,7 +259,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"Apple Laptops Product 1000\",\r\n    \"description\": \"This compact and lightweight gadget is perfect for on-the-go productivity.\",\r\n    \"price\": 1060.79,\r\n    \"createdAt\": \"2025-09-24T19:49:18.479Z\",\r\n    \"categoryId\": 1,\r\n    \"markId\": 1\r\n}",
+							"raw": "{\r\n    \"name\": \"Apple Laptops Product 99000\",\r\n    \"description\": \"This compact and lightweight gadget is perfect for on-the-go productivity.\",\r\n    \"price\": 1500.79,\r\n    \"stock\":110,\r\n    \"createdAt\": \"2025-09-24T19:49:18.479Z\",\r\n    \"categoryId\": 1,\r\n    \"markId\": 1\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -263,7 +267,7 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/products/262",
+							"raw": "{{baseUrl}}:{{port}}/api/products/265",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -271,7 +275,7 @@
 							"path": [
 								"api",
 								"products",
-								"262"
+								"265"
 							]
 						}
 					},
@@ -283,14 +287,21 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/marks",
+							"raw": "{{baseUrl}}:{{port}}/api/products/9?fullProduct=false",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"port": "{{port}}",
 							"path": [
 								"api",
-								"marks"
+								"products",
+								"9"
+							],
+							"query": [
+								{
+									"key": "fullProduct",
+									"value": "false"
+								}
 							]
 						}
 					},
@@ -302,14 +313,22 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/marks",
+							"raw": "{{baseUrl}}:{{port}}/api/products/advert/19?format=text",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"port": "{{port}}",
 							"path": [
 								"api",
-								"marks"
+								"products",
+								"advert",
+								"19"
+							],
+							"query": [
+								{
+									"key": "format",
+									"value": "text"
+								}
 							]
 						}
 					},
@@ -326,14 +345,21 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/marks",
+							"raw": "{{baseUrl}}:{{port}}/api/marks/1?includeProducts=true",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"port": "{{port}}",
 							"path": [
 								"api",
-								"marks"
+								"marks",
+								"1"
+							],
+							"query": [
+								{
+									"key": "includeProducts",
+									"value": "true"
+								}
 							]
 						}
 					},
@@ -366,7 +392,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "",
+							"raw": "{ \"name\": \"Hewlett-Packard1\" }",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -397,7 +423,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/marks/11",
+							"raw": "{{baseUrl}}:{{port}}/api/marks/15",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -405,7 +431,7 @@
 							"path": [
 								"api",
 								"marks",
-								"11"
+								"15"
 							]
 						}
 					},
@@ -416,8 +442,17 @@
 					"request": {
 						"method": "PUT",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"Hewlett-Packard11\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{baseUrl}}:{{port}}/api/marks/",
+							"raw": "{{baseUrl}}:{{port}}/api/marks/15",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -425,7 +460,7 @@
 							"path": [
 								"api",
 								"marks",
-								""
+								"15"
 							]
 						}
 					},
